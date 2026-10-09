@@ -1,0 +1,479 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Flock Energy Urja Meter Ops API",
+    "description": "Clean REST API wrapper around the Urja Meter Ops legacy smart-meter portal.",
+    "version": "1.0.0"
+  },
+  "servers": [
+    {
+      "url": "http://localhost:3000",
+      "description": "Local server"
+    }
+  ],
+  "paths": {
+    "/health": {
+      "get": {
+        "summary": "Health check",
+        "description": "Returns operational status and uptime of the API wrapper.",
+        "responses": {
+          "200": {
+            "description": "API is healthy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HealthResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/meters": {
+      "get": {
+        "summary": "List meters",
+        "description": "Retrieves a paginated list of smart meters, optionally filtered by search term.",
+        "parameters": [
+          {
+            "name": "q",
+            "in": "query",
+            "description": "Search keyword for meter number or serial number",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "description": "Page number (defaults to 1)",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 1,
+              "minimum": 1
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of meters with pagination metadata",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MetersListResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication failure with upstream portal",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Upstream portal communication error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/meters/{id}": {
+      "get": {
+        "summary": "Get meter details",
+        "description": "Retrieves comprehensive specifications, geographic coordinates, and grid hierarchy for a specific smart meter.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Unique identifier of the meter (e.g. J100000)",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Detailed meter profile",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MeterDetailResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid meter ID provided",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Meter not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Upstream portal communication error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/meters/{id}/consumption": {
+      "get": {
+        "summary": "Get meter consumption history",
+        "description": "Retrieves time-series energy intervals (kWh, kVAh, and voltage) for a smart meter.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Unique identifier of the meter",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Energy consumption intervals",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConsumptionResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid meter ID provided",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Meter not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Upstream portal communication error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/hierarchy": {
+      "get": {
+        "summary": "Get distribution hierarchy",
+        "description": "Retrieves distribution transformers, feeder connections, and transformer ratings across the network.",
+        "responses": {
+          "200": {
+            "description": "List of distribution transformers",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HierarchyResponse"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Upstream portal communication error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "HealthResponse": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "example": "ok"
+          },
+          "uptime": {
+            "type": "number",
+            "example": 42.5
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "MeterSummary": {
+        "type": "object",
+        "properties": {
+          "meterId": {
+            "type": "string",
+            "example": "J100000"
+          },
+          "serialNo": {
+            "type": "string",
+            "example": "SE33962"
+          },
+          "make": {
+            "type": "string",
+            "example": "HPL"
+          },
+          "phaseType": {
+            "type": "string",
+            "example": "single"
+          },
+          "installStatus": {
+            "type": "string",
+            "example": "Decommissioned"
+          },
+          "dtCode": {
+            "type": "string",
+            "example": "DT-001"
+          }
+        }
+      },
+      "MetersListResponse": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MeterSummary"
+            }
+          },
+          "pagination": {
+            "type": "object",
+            "properties": {
+              "total": {
+                "type": "integer",
+                "example": 403
+              },
+              "page": {
+                "type": "integer",
+                "example": 1
+              },
+              "pageSize": {
+                "type": "integer",
+                "example": 20
+              },
+              "totalPages": {
+                "type": "integer",
+                "example": 21
+              }
+            }
+          }
+        }
+      },
+      "MeterDetailResponse": {
+        "type": "object",
+        "properties": {
+          "meterId": {
+            "type": "string",
+            "example": "J100000"
+          },
+          "serialNo": {
+            "type": "string",
+            "example": "SE33962"
+          },
+          "make": {
+            "type": "string",
+            "example": "HPL"
+          },
+          "phaseType": {
+            "type": "string",
+            "example": "single"
+          },
+          "installStatus": {
+            "type": "string",
+            "example": "Decommissioned"
+          },
+          "installationType": {
+            "type": "string",
+            "example": "Whole Current"
+          },
+          "location": {
+            "type": "object",
+            "nullable": true,
+            "properties": {
+              "latitude": {
+                "type": "string",
+                "example": "26.938961"
+              },
+              "longitude": {
+                "type": "string",
+                "example": "75.830956"
+              }
+            }
+          },
+          "hierarchy": {
+            "type": "object",
+            "properties": {
+              "zone": {
+                "type": "string",
+                "example": "Jaipur Zone 1 (Z-01)"
+              },
+              "circle": {
+                "type": "string",
+                "example": "Circle 1 (C-01)"
+              },
+              "division": {
+                "type": "string",
+                "example": "Division 1 (D-01)"
+              },
+              "subdivision": {
+                "type": "string",
+                "example": "Subdivision 1 (SD-01)"
+              },
+              "substation": {
+                "type": "string",
+                "example": "Substation 1 (SS-01)"
+              },
+              "feeder": {
+                "type": "string",
+                "example": "Feeder 1 (F-001)"
+              },
+              "dt": {
+                "type": "string",
+                "example": "Malviya Nagar DT 1 (DT-001)"
+              }
+            }
+          }
+        }
+      },
+      "ConsumptionReading": {
+        "type": "object",
+        "properties": {
+          "timestamp": {
+            "type": "string",
+            "example": "23/06/2026 23:30"
+          },
+          "kwh": {
+            "type": "number",
+            "example": 48438.74
+          },
+          "kvah": {
+            "type": "number",
+            "example": 52313.84
+          },
+          "voltageR": {
+            "type": "number",
+            "example": 226
+          }
+        }
+      },
+      "ConsumptionResponse": {
+        "type": "object",
+        "properties": {
+          "meterId": {
+            "type": "string",
+            "example": "J100000"
+          },
+          "totalReadings": {
+            "type": "integer",
+            "example": 337
+          },
+          "readings": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ConsumptionReading"
+            }
+          }
+        }
+      },
+      "TransformerItem": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "example": "DT-001"
+          },
+          "name": {
+            "type": "string",
+            "example": "Malviya Nagar DT 1"
+          },
+          "feederCode": {
+            "type": "string",
+            "example": "F-001"
+          },
+          "capacityKva": {
+            "type": "number",
+            "example": 100
+          }
+        }
+      },
+      "HierarchyResponse": {
+        "type": "object",
+        "properties": {
+          "transformers": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TransformerItem"
+            }
+          }
+        }
+      },
+      "ErrorResponse": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "string",
+            "example": "Meter not found"
+          }
+        }
+      }
+    }
+  }
+}
